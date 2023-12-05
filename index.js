@@ -61,6 +61,7 @@ app.post(SEND_NOTIFICATIONS_PATH, async (req, res, next) => {
     for (const message of messages) {
       try {
         await admin.messaging().send(message);
+        console.log("Notification sent successfully to:", message.token);
       } catch (sendError) {
         console.error("Error sending notification:", sendError);
         // Handle the specific token error here if needed
