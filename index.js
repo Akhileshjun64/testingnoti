@@ -39,7 +39,7 @@ app.post(SAVE_TOKEN_PATH, async (req, res, next) => {
     res.json({ message: "Token saved to the database successfully" });
   } catch (error) {
     console.error("Error saving token:", error);
-    next(error);
+    res.status(500).json({ error: "Internal Server Error" });
   }
 });
 
@@ -58,15 +58,18 @@ app.post(SEND_NOTIFICATIONS_PATH, async (req, res, next) => {
       token: tokenFromDB.token,
     }));
 
-    for (const message of messages) {
+    const sendPromises = messages.map(async (message) => {
       try {
         await admin.messaging().send(message);
         console.log("Notification sent successfully to:", message.token);
       } catch (sendError) {
         console.error("Error sending notification:", sendError);
+        console.log("Failed notification details:", message);
         // Handle the specific token error here if needed
       }
-    }
+    });
+
+    await Promise.all(sendPromises);
 
     res.status(200).json({
       message: "Notifications sent to all tokens in the database",
@@ -75,16 +78,11 @@ app.post(SEND_NOTIFICATIONS_PATH, async (req, res, next) => {
     console.log("Notifications sent to all tokens in the database");
   } catch (error) {
     console.error("Error sending notifications:", error);
-    next(error);
+    res.status(500).json({ error: "Internal Server Error" });
   }
 });
 
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({ error: "Internal Server Error" });
-});
-
-const PORT = 4000;
+const PORT = process.env.PORT || 4000;
 app.listen(PORT, function () {
   console.log(`Server started on port ${PORT}`);
 });
